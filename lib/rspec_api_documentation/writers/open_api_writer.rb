@@ -116,11 +116,13 @@ module RspecApiDocumentation
             end
           end
 
-          if /\A(?<response_content_type>[^;]+)/ =~ request[:response_content_type]
-            response.safe_assign_setting(:examples, OpenApi::Example.new)
-            response_body = JSON.parse(request[:response_body]) rescue nil
-            response.examples.add_setting response_content_type, :value => response_body
-          end
+          response.safe_assign_setting(:examples, OpenApi::Example.new)
+          response_body = JSON.parse(request[:response_body]) rescue nil
+
+          response_content_type = response_content_type.presence || "application/json"
+          response_body = response_body.presence || {}
+
+          response.examples.add_setting response_content_type, :value => response_body
           responses.add_setting "#{request[:response_status]}", :value => response
         end
       end
