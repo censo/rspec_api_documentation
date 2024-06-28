@@ -8,14 +8,37 @@ concurrency:
 
 jobs:
   gitleaks-workflow:
-    runs-on: [self-hosted, prod-1c-4gb]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: SchoolKeep/gitleaks-workflow@main
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          licence: ${{ secrets.GITLEAKS_LICENSE }}
+          fetch-depth: 0
+      - name: Run Gitleaks
+        if: ${{ inputs.config-file == '' }}
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      - name: Run Gitleaks with custom config
+        if: ${{ inputs.config-file != '' }}
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ inputs.licence }}
+          GITLEAKS_CONFIG: ${{ github.workspace }}/${{ inputs.config-file }}
   brakeman-workflow:
-    runs-on: [self-hosted, prod-1c-4gb]
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: SchoolKeep/brakeman-workflow@main
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3
+      - name: Install dependencies
+        shell: bash
+        run: gem install brakeman
+      - name: Run Brakeman
+        shell: bash
+        run: brakeman --path ${{ github.workspace }} --force
